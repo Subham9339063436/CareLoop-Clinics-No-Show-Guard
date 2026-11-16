@@ -1,15 +1,15 @@
-# Environment/secrets
+# Runtime secrets
 .env
 .env.*
 *.pem
 *.key
-# Python
+# Python / notebook runtime
 __pycache__/
 *.py[cod]
-.ipynb_checkpoints/
 .venv/
 venv/
-# OS/editor/local databases
+.ipynb_checkpoints/
+# OS/editor/local database files
 .DS_Store
 *.sqlite
 *.db

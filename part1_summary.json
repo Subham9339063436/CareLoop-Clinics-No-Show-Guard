@@ -1,0 +1,42 @@
+{
+  "raw_rows": 1020,
+  "accepted": 988,
+  "rejected": 32,
+  "deduplicated_rows": 990,
+  "clean_rows": 990,
+  "no_shows": 218,
+  "no_show_rate_pct": 22.0,
+  "means": [
+    48.173737373737374,
+    9.50090909090909,
+    635.7141414141414,
+    11.819191919191919
+  ],
+  "long_lead_count": 296,
+  "long_lead_share": 0.298989898989899,
+  "distance_abs_z_gt_2": 53,
+  "cap_counts": {
+    "distance_km": 26,
+    "fee_inr": 3
+  },
+  "fences": {
+    "distance_km": [
+      4.625,
+      13.0,
+      -7.9375,
+      25.5625
+    ],
+    "fee_inr": [
+      500.0,
+      787.5,
+      68.75,
+      1218.75
+    ]
+  },
+  "invalid_age_count": 5,
+  "age_median": 48.0,
+  "distance_median": 8.25,
+  "api_temp_nonnull": 0,
+  "api_temp_null": 8,
+  "api_failure_reason": "Open-Meteo API requests failed in the execution environment; temperatures left blank and represented as SQL NULL."
+}

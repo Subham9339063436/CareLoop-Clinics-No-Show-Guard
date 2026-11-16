@@ -47,7 +47,8 @@ SELECT COUNT(*) AS appointment_count, SUM(no_show) AS no_shows FROM appointments
 -- MySQL Workbench reports a duplicate-entry / PRIMARY KEY error instead.
 
 -- Task 2.2: No-show rate by clinic, retaining clinics with at least 95 appointments.
-SELECT c.clinic_name, c.city,
+SELECT c.clinic_name,
+       c.city,
        COUNT(*) AS appointments,
        SUM(a.no_show) AS no_shows,
        ROUND(100.0 * SUM(a.no_show) / COUNT(*), 1) AS no_show_pct
@@ -58,7 +59,8 @@ HAVING COUNT(*) >= 95
 ORDER BY no_show_pct DESC;
 
 -- Task 2.2: Repeat without HAVING to inspect all eight clinics.
-SELECT c.clinic_name, c.city,
+SELECT c.clinic_name,
+       c.city,
        COUNT(*) AS appointments,
        SUM(a.no_show) AS no_shows,
        ROUND(100.0 * SUM(a.no_show) / COUNT(*), 1) AS no_show_pct
@@ -66,6 +68,11 @@ FROM appointments AS a
 JOIN clinics AS c ON c.clinic_id = a.clinic_id
 GROUP BY c.clinic_id, c.clinic_name, c.city
 ORDER BY no_show_pct DESC;
+
+-- Python reconciliation used the clean CSV:
+-- (appointments_clean.groupby('clinic_id')
+--  .agg(appointments=('appointment_id','count'), no_shows=('no_show','sum')))
+-- The clinic counts and no-show counts match the SQL results exactly.
 
 -- Task 2.3: Lead-time bands. ORDER BY MIN(lead_days) ensures numeric band order.
 SELECT CASE
@@ -89,20 +96,24 @@ WITH monthly AS (
   FROM appointments
   GROUP BY SUBSTR(appt_date, 1, 7)
 )
-SELECT month, appointments, no_show_pct,
+SELECT month,
+       appointments,
+       no_show_pct,
        ROUND(no_show_pct - LAG(no_show_pct) OVER (ORDER BY month), 1) AS change_pp
 FROM monthly
 ORDER BY month;
 
 -- Task 2.5: Rank clinics within their city and compare each rate with the overall rate.
 WITH clinic_rates AS (
-  SELECT c.clinic_name AS clinic, c.city,
+  SELECT c.clinic_name AS clinic,
+         c.city,
          100.0 * SUM(a.no_show) / COUNT(*) AS no_show_pct
   FROM appointments AS a
   JOIN clinics AS c ON c.clinic_id = a.clinic_id
   GROUP BY c.clinic_id, c.clinic_name, c.city
 )
-SELECT clinic, city,
+SELECT clinic,
+       city,
        ROUND(no_show_pct, 1) AS no_show_pct,
        RANK() OVER (PARTITION BY city ORDER BY no_show_pct DESC) AS rank_in_city,
        CASE
