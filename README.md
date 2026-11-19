@@ -26,24 +26,37 @@ Which appointments are most likely to be missed, why do patients miss them, and 
 
 The cleaned table contains 990 distinct bookings and 218 no-shows (22.0%). Long booking lead times are an important risk signal: bookings made 31 or more days ahead had 26 no-shows among 43 appointments (60.5%), compared with 16.2% for the 1–7 day band. Among clinics with at least 95 bookings, Hadapsar Care Centre had the highest no-show rate at 27.3% (39/143); when all clinics are included, Gomti Nagar Care Point is highest at 33.3% (30/90), but its smaller sample warrants caution. Logistic regression was selected using training-only five-fold cross-validation (ROC-AUC 0.774). The 0.35 threshold improved the training out-of-fold F1 to 0.489 (recall 0.467), compared with F1 0.347 (recall 0.249) at 0.50; on the held-out test set it produced ROC-AUC 0.789, precision 0.571, recall 0.571 and 49 flags out of 198. In the first 10 notes, 8 classifications were valid; the two patients classified as forgot/no-reminder both had `reminder_sent = No`, and 5 of the 10 linked bookings had no reminder recorded. CareLoop should first use the model to prioritize evening-before calls for bookings with risk probability at least 0.35, especially long-lead bookings, while piloting reminder-delivery/contact checks, transport assistance, fee-support information and evening/Saturday rescheduling options. The live operating threshold should be adjusted to the number of calls the front desk can make in an evening and the cost of an empty doctor slot. The note evidence is exploratory, not clinic-wide proof.
 
-## Part 4 — note reasons and reminder cross-tab
+## Part 4 — note reasons, prompt comparison and reminder cross-tab
 
-The first 10 rows of `followup_notes.csv` produced 8 valid model replies, 1 required blank-note skip (N004), and 1 invalid row (N008) with no raw response because the API calls failed. Among the 8 valid classifications, the observed counts were: forgot/no-reminder 2, distance/transport 1, cost/fee 1, illness/emergency 1, work/schedule 2, and other 1. N008 is unclassified; it is not counted in those reason totals. The required skipped-blank convention sets N004 to `other` with confidence 0.0, so that placeholder is visible in the cross-tab but must not be interpreted as a patient-reported reason.
+The first 10 rows of `followup_notes.csv` produced 8 valid model replies, 1 required blank-note skip (N004), and 1 invalid row (N008) with an empty raw response because Gemini API requests failed. The notebook's displayed API-call counter at final verification was **16**, below the assignment's limit of 25. The count includes attempted requests and retries as counted by the notebook runtime.
 
-The merged 10-row cross-tabulation of root cause against reminder status is:
+Among the 8 valid classifications, the observed counts were: forgot/no-reminder 2, distance/transport 1, cost/fee 1, illness/emergency 1, work/schedule 2, and other 1. N008 is unclassified; it is not counted in those reason totals. The required skipped-blank convention sets N004 to `other` with confidence 0.0, so that placeholder is visible in the cross-tab but must not be interpreted as a patient-reported reason.
+
+### Task 4.3 — Prompt comparison
+
+| Note | V1 basic prompt | Allowed? | V2 CRAFT prompt | Allowed? |
+|---|---|---:|---|---:|
+| N007 (Hinglish) | `forgot` | No | `forgot_or_no_reminder` | Yes |
+| N009 (ambiguous/unreachable) | `other` | Yes | `other` | Yes |
+
+Deploy V2 CRAFT: it enumerates the allowed reasons and instructs the model to use `other` instead of guessing when the note does not support a specific category. The total API-call counter shown after Tasks 4.1–4.3 was 16.
+
+### Task 4.4 — Reminder cross-tab
+
+The 10-row merge was successful. The direct `pd.crosstab(root_cause, reminder_sent)` output was:
 
 | Root cause in output | Reminder No | Reminder Yes |
 |---|---:|---:|
-| forgot_or_no_reminder | 2 | 0 |
-| distance_or_transport | 1 | 0 |
 | cost_or_fee | 0 | 1 |
+| distance_or_transport | 1 | 0 |
+| forgot_or_no_reminder | 2 | 0 |
 | illness_or_emergency | 0 | 1 |
+| other (N004 skipped placeholder and N009) | 1 | 1 |
 | work_or_schedule | 1 | 1 |
-| other (N004 skipped placeholder + N009) | 1 | 1 |
-| blank/invalid (N008 API failure) | 0 | 1 |
-| **Total** | **5** | **5** |
+| **Crosstab total** | **5** | **4** |
 
-Thus, both forgotten/no-reminder cases (2/2) were associated with `reminder_sent = No`; 5 of 10 sampled bookings had no reminder recorded. This is a tiny convenience sample and supports follow-up hypotheses, not causal or clinic-wide conclusions.
+N008 has a blank root-cause field because its API call failed, so pandas' default crosstab omits that unclassified row. It remains present in the merged 10-row dataset. Across all 10 linked notes, **5 bookings had `reminder_sent = No`** and 5 had `Yes`. Both valid forgotten/no-reminder cases (N001 and N007) had `reminder_sent = No` (2 of 2). The blank N004 placeholder is not evidence of a patient-stated reason.
+
 
 ## Important modelling interpretation
 
